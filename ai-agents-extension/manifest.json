@@ -1,0 +1,15 @@
+{
+    "manifest_version": 3,
+    "name": "ChatGPT AI Agents",
+    "description": "Sidebar extension for AI agents in ChatGPT.",
+    "version": "1.0",
+    "permissions": ["scripting", "activeTab"],
+    "host_permissions": ["https://chat.openai.com/*"],
+    "content_scripts": [
+        {
+            "matches": ["https://chat.openai.com/*", "https://chatgpt.com/*"],
+            "js": ["content.js"],
+            "css": ["styles.css"]
+        }
+    ]
+}

@@ -1,0 +1,50 @@
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 300px;
+    background: #f3f4f6;
+    border-left: 1px solid #e5e7eb;
+    padding: 1rem;
+    box-shadow: -3px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.agent-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.agent-item:hover {
+    background: #e5e7eb;
+}
+
+.agent-name {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.agent-description {
+    color: #6b7280;
+}
+
+#custom-agent-form {
+    margin-bottom: 1rem;
+}
+
+#custom-agent-form input {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    width: 100%;
+}
+
+#custom-agent-form label {
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    display: block;
+    color: #374151;
+}
