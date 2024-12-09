@@ -3,7 +3,22 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const app = express();
+const cors = require("cors");
 const authMiddleware = require("./middlewares/authMiddleware");
+const connectDatabase = require("./configs/connectDatabase");
+const User = require("./models/user");
+const Agent = require("./models/agents");
+
+// Enable CORS with specific origin
+app.use(
+    cors({
+        origin: "https://chatgpt.com", // Allow requests from your extension's domain
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    })
+);
+
+connectDatabase();
 
 app.use(express.json());
 
@@ -48,8 +63,18 @@ app.post("/login", async (req, res) => {
 
 // Get all agents
 app.get("/agents", async (req, res) => {
-    const agents = await Agent.find();
+    const agents = await Agent.find().populate("createdBy", "username");
     res.json(agents);
+});
+
+// Get current user
+app.get("/me", authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch user data" });
+    }
 });
 
 // Add an agent
