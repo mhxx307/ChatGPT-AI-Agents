@@ -178,3 +178,14 @@ button.login:hover {
 .sidebar::-webkit-scrollbar-thumb:hover {
     background-color: #9ca3af;
 }
+
+/* Sidebar is visible by default */
+.sidebar {
+    transform: translateX(0);
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Sidebar hidden state */
+.sidebar.hidden {
+    transform: translateX(-100%);
+}

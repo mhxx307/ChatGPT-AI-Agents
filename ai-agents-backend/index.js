@@ -116,6 +116,8 @@ app.put("/agents/:id", authMiddleware, async (req, res) => {
 app.delete("/agents/:id", authMiddleware, async (req, res) => {
     const { id } = req.params;
 
+    console.log(id);
+
     try {
         const agent = await Agent.findOne({ _id: id, createdBy: req.user.id });
         if (!agent) return res.status(403).json({ error: "Unauthorized" });
