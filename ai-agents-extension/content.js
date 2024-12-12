@@ -11,6 +11,45 @@ const API_BASE_URL = "http://localhost:3000";
 // JWT Token (to be set after login)
 let authToken = null;
 
+// --- Utility Functions ---
+const localStorageUtils = (() => {
+    const addAgentToCache = (agent) => {
+        const cachedAgents =
+            JSON.parse(localStorage.getItem("cachedAgents")) || [];
+        cachedAgents.push(agent);
+        updateCache(cachedAgents);
+    };
+
+    const updateAgentInCache = (updatedAgent) => {
+        const cachedAgents =
+            JSON.parse(localStorage.getItem("cachedAgents")) || [];
+        const index = cachedAgents.findIndex(
+            (agent) => agent._id === updatedAgent._id
+        );
+        if (index > -1) {
+            cachedAgents[index] = updatedAgent;
+            updateCache(cachedAgents);
+        }
+    };
+
+    const removeAgentFromCache = (id) => {
+        const cachedAgents =
+            JSON.parse(localStorage.getItem("cachedAgents")) || [];
+        const updatedAgents = cachedAgents.filter((agent) => agent._id !== id);
+        updateCache(updatedAgents);
+    };
+
+    const updateCache = (updatedAgents) => {
+        localStorage.setItem("cachedAgents", JSON.stringify(updatedAgents));
+    };
+
+    return {
+        addAgentToCache,
+        updateAgentInCache,
+        removeAgentFromCache,
+    };
+})();
+
 const toggleSidebar = () => {
     const sidebar = document.querySelector(".sidebar");
     if (!sidebar) return;
@@ -21,12 +60,23 @@ const toggleSidebar = () => {
 
 // Utility to fetch agents
 const fetchAgents = async () => {
+    // Check if cached data exists
+    const cachedAgents = localStorage.getItem("cachedAgents");
+    if (cachedAgents) {
+        return JSON.parse(cachedAgents);
+    }
+
+    // If no cached data, fetch from the server
     try {
         const response = await fetch(`${API_BASE_URL}/agents`, {
             headers: { Authorization: authToken },
         });
         if (!response.ok) throw new Error("Failed to fetch agents");
-        return await response.json();
+        const freshAgents = await response.json();
+        // Cache the fetched data
+        localStorage.setItem("cachedAgents", JSON.stringify(freshAgents));
+
+        return freshAgents;
     } catch (error) {
         console.error(error);
         return [];
@@ -64,7 +114,16 @@ const saveAgent = async (agentData, isUpdate = false) => {
             body: JSON.stringify(agentData),
         });
         if (!response.ok) throw new Error("Failed to save agent");
-        return await response.json();
+        const savedAgent = await response.json();
+        // Update cache using utilities function
+        if (isUpdate) {
+            localStorageUtils.updateAgentInCache(savedAgent);
+        } else {
+            localStorageUtils.addAgentToCache(savedAgent);
+        }
+        // Update UI when adding or updating agent item
+        renderAgents();
+        return savedAgent;
     } catch (error) {
         console.error(error);
     }
@@ -78,7 +137,12 @@ const deleteAgent = async (id) => {
             headers: { Authorization: authToken },
         });
         if (!response.ok) throw new Error("Failed to delete agent");
-        return await response.json();
+        const result = await response.json();
+        // Update cache using utilities function
+        localStorageUtils.removeAgentFromCache(id);
+        // Update UI after successful deletion
+        renderAgents();
+        return result;
     } catch (error) {
         console.error(error);
     }
@@ -92,7 +156,12 @@ const cloneAgent = async (id) => {
             headers: { Authorization: authToken },
         });
         if (!response.ok) throw new Error("Failed to clone agent");
-        return await response.json();
+        const result = await response.json();
+        // Update cache using utilities function
+        localStorageUtils.addAgentToCache(result);
+        // Update UI after successful deletion
+        renderAgents();
+        return result;
     } catch (error) {
         console.error(error);
     }
