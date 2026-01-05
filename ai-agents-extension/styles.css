@@ -217,10 +217,19 @@
 /* Custom Agent Form */
 #custom-agent-form {
     margin-bottom: 1rem !important;
+    background-color: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 0.9rem !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+    position: relative !important;
+    z-index: 10 !important;
+    pointer-events: auto !important;
 }
 
 #custom-agent-form input,
-#custom-agent-form textarea {
+#custom-agent-form textarea,
+#custom-agent-form select {
     padding: 0.5rem !important;
     border: 1px solid #d1d5db !important;
     border-radius: 0.375rem !important;
@@ -228,6 +237,25 @@
     font-size: 0.9rem !important;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
     font-family: "Arial", sans-serif !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 11 !important;
+    background-color: white !important;
+}
+
+#custom-agent-form select {
+    cursor: pointer !important;
+    appearance: auto !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.5rem center !important;
+    padding-right: 2rem !important;
+}
+
+#custom-agent-form select:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
 #custom-agent-form label {
@@ -236,6 +264,35 @@
     font-size: 0.85rem !important;
     display: block !important;
     color: #374151 !important;
+}
+
+/* Header + toggle cho form */
+.ai-agents-form-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.ai-agents-form-title {
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    color: #111827 !important;
+}
+
+.ai-agents-form-toggle {
+    background-color: transparent !important;
+    border: none !important;
+    color: #2563eb !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    padding: 0.15rem 0.5rem !important;
+    border-radius: 999px !important;
+}
+
+.ai-agents-form-toggle:hover {
+    background-color: #e5e7eb !important;
 }
 
 /* Scrollbar */
@@ -250,4 +307,43 @@
 
 .ai-agents-sidebar::-webkit-scrollbar-thumb:hover {
     background-color: #9ca3af !important;
+}
+
+/* JSON Import Button in ChatGPT Response */
+.ai-agents-json-button-container {
+    margin-top: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+}
+
+.ai-agents-import-json-btn {
+    background-color: #10b981 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0.375rem !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-family: "Arial", sans-serif !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    z-index: 100 !important;
+    position: relative !important;
+}
+
+.ai-agents-import-json-btn:hover {
+    background-color: #059669 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ai-agents-import-json-btn:active {
+    transform: translateY(0) !important;
+}
+
+.ai-agents-import-json-btn:disabled {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
 }

@@ -32,7 +32,7 @@ const handleAgentClick = (agent) => {
         document.querySelector("div.ProseMirror")?.parentElement;
     if (!chatContainer) return;
 
-    // If the agent has no form fields, render the basic prompt directly
+    // If the agent has no form fields, render the basic prompt trực tiếp
     if (!agent.formFields || agent.formFields.length === 0) {
         const chatInput = document.querySelector("div.ProseMirror");
         if (chatInput) {
@@ -46,10 +46,42 @@ const handleAgentClick = (agent) => {
         return;
     }
 
-    // Create a form container if form fields exist
+    // Create a form container nếu agent có formFields
     const formContainer = document.createElement("div");
     formContainer.id = "custom-agent-form";
-    formContainer.className = "space-y-4";
+
+    // Ngăn event propagation để không trigger focus vào ChatGPT input
+    formContainer.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+    formContainer.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+    });
+    formContainer.addEventListener("mouseup", (e) => {
+        e.stopPropagation();
+    });
+    formContainer.addEventListener("focusin", (e) => {
+        e.stopPropagation();
+    });
+
+    // Header với title + toggle form
+    const header = document.createElement("div");
+    header.className = "ai-agents-form-header";
+
+    const title = document.createElement("span");
+    title.className = "ai-agents-form-title";
+    title.textContent = agent.name || "Custom Form";
+
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.className = "ai-agents-form-toggle";
+    toggleButton.textContent = "Ẩn form";
+
+    header.appendChild(title);
+    header.appendChild(toggleButton);
+
+    const body = document.createElement("div");
+    body.className = "ai-agents-form-body";
 
     // Add fields dynamically from the agent's formFields
     agent.formFields.forEach((field) => {
@@ -59,26 +91,105 @@ const handleAgentClick = (agent) => {
         label.textContent = field.label;
         label.className = "block text-sm font-medium text-gray-700";
 
-        const input = document.createElement("input");
-        input.type = field.type;
-        input.placeholder = field.placeholder;
-        input.defaultValue = field.default || "";
-        input.className =
-            "block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
+        let input;
+        
+        // Support select/dropdown type
+        if (field.type === "select" || field.type === "dropdown") {
+            input = document.createElement("select");
+            input.className =
+                "block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
+            
+            // Add options if provided
+            if (field.options && Array.isArray(field.options)) {
+                field.options.forEach((option) => {
+                    const optionEl = document.createElement("option");
+                    if (typeof option === "string") {
+                        optionEl.value = option;
+                        optionEl.textContent = option;
+                    } else {
+                        optionEl.value = option.value || option.label;
+                        optionEl.textContent = option.label || option.value;
+                    }
+                    if (optionEl.value === (field.default || "")) {
+                        optionEl.selected = true;
+                    }
+                    input.appendChild(optionEl);
+                });
+            } else if (field.placeholder) {
+                // Parse options from placeholder (format: "option1 | option2 | option3")
+                const options = field.placeholder.split("|").map(opt => opt.trim()).filter(opt => opt);
+                options.forEach((option) => {
+                    const optionEl = document.createElement("option");
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    if (option === (field.default || "")) {
+                        optionEl.selected = true;
+                    }
+                    input.appendChild(optionEl);
+                });
+            }
+        } else if (field.type === "textarea") {
+            input = document.createElement("textarea");
+            input.placeholder = field.placeholder;
+            input.defaultValue = field.default || "";
+            input.className =
+                "block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
+            input.rows = field.rows || 3;
+        } else {
+            input = document.createElement("input");
+            input.type = field.type || "text";
+            input.placeholder = field.placeholder;
+            input.defaultValue = field.default || "";
+            input.className =
+                "block w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
+        }
 
+        // Ngăn event propagation cho input
+        input.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+        input.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+        });
+        input.addEventListener("focus", (e) => {
+            e.stopPropagation();
+        });
+        input.addEventListener("focusin", (e) => {
+            e.stopPropagation();
+        });
+        input.addEventListener("change", updateCombinedPrompt);
         input.addEventListener("input", updateCombinedPrompt);
 
         fieldWrapper.appendChild(label);
         fieldWrapper.appendChild(input);
-        formContainer.appendChild(fieldWrapper);
+        body.appendChild(fieldWrapper);
+    });
+
+    formContainer.appendChild(header);
+    formContainer.appendChild(body);
+
+    // Toggle hiển thị form body
+    let collapsed = false;
+    toggleButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        body.style.display = collapsed ? "none" : "block";
+        toggleButton.textContent = collapsed ? "Hiện form" : "Ẩn form";
     });
 
     chatContainer.insertBefore(formContainer, chatContainer.firstChild);
 
-    // Function to combine inputs and update the textarea
+    // Function combine inputs và update textarea
     function updateCombinedPrompt() {
-        const userInputs = Array.from(formContainer.querySelectorAll("input"))
-            .map((input) => `${input.placeholder}: ${input.value}`)
+        const userInputs = Array.from(
+            body.querySelectorAll("input, select, textarea")
+        )
+            .map((input) => {
+                const label = input.previousElementSibling?.textContent || input.placeholder || "";
+                const value = input.value || "";
+                return value ? `${label}: ${value}` : "";
+            })
+            .filter(item => item)
             .join("\n");
 
         const combinedPrompt = `${agent.prompt}\n${userInputs}`;
@@ -518,5 +629,170 @@ const initExtension = async () => {
     console.log("Extension initialized.");
 };
 
+// Parse JSON from code block
+const parseJSONFromCodeBlock = (codeElement) => {
+    try {
+        // Get text content, remove HTML tags and syntax highlighting spans
+        let text = codeElement.textContent || codeElement.innerText;
+        
+        // Try to extract JSON from markdown code block if present
+        text = text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        
+        // Parse JSON
+        const jsonData = JSON.parse(text);
+        
+        // Validate format
+        if (!jsonData.version || !jsonData.agents || !Array.isArray(jsonData.agents)) {
+            throw new Error("Invalid JSON format. Expected: {version, exportedAt, agents: []}");
+        }
+        
+        return jsonData;
+    } catch (error) {
+        console.error("Failed to parse JSON:", error);
+        return null;
+    }
+};
+
+// Add import button to JSON code blocks
+const addImportButtonToCodeBlock = (codeElement) => {
+    // Check if button already exists
+    if (codeElement.parentElement?.querySelector(".ai-agents-import-json-btn")) {
+        return;
+    }
+    
+    // Strict validation: Must be a JSON code block with proper structure
+    const text = codeElement.textContent || codeElement.innerText || "";
+    const cleanText = text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+    
+    // Must have all required fields for agent JSON format
+    const hasVersion = cleanText.includes('"version"') || cleanText.includes("'version'");
+    const hasExportedAt = cleanText.includes('"exportedAt"') || cleanText.includes("'exportedAt'");
+    const hasAgents = cleanText.includes('"agents"') || cleanText.includes("'agents'");
+    const hasName = cleanText.includes('"name"') || cleanText.includes("'name'");
+    const hasDescription = cleanText.includes('"description"') || cleanText.includes("'description'");
+    const hasPrompt = cleanText.includes('"prompt"') || cleanText.includes("'prompt'");
+    
+    // Must be inside a code block with language-json class
+    const isJSONCodeBlock = codeElement.classList.contains("language-json") || 
+                            codeElement.closest("pre")?.querySelector("code.language-json") === codeElement;
+    
+    // Validate it's actually valid agent JSON structure
+    if (!isJSONCodeBlock || !hasVersion || !hasExportedAt || !hasAgents || !hasName || !hasDescription || !hasPrompt) {
+        return;
+    }
+    
+    // Try to parse to confirm it's valid JSON
+    try {
+        const testJson = JSON.parse(cleanText);
+        if (!testJson.version || !testJson.agents || !Array.isArray(testJson.agents) || testJson.agents.length === 0) {
+            return;
+        }
+        // Check first agent has required fields
+        const firstAgent = testJson.agents[0];
+        if (!firstAgent.name || !firstAgent.description || !firstAgent.prompt) {
+            return;
+        }
+    } catch (e) {
+        // Not valid JSON, skip
+        return;
+    }
+    
+    // Create button container
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "ai-agents-json-button-container";
+    
+    const importButton = document.createElement("button");
+    importButton.className = "ai-agents-import-json-btn";
+    importButton.textContent = "➕ Add Agent";
+    importButton.title = "Import agent từ JSON này";
+    
+    importButton.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const jsonData = parseJSONFromCodeBlock(codeElement);
+        if (!jsonData) {
+            alert("Không thể parse JSON. Vui lòng kiểm tra format.");
+            return;
+        }
+        
+        try {
+            // Import agents
+            const result = await db.importData(jsonData, false); // false = merge, không xóa existing
+            alert(`✅ Import thành công! ${result.imported} agent(s) đã được thêm vào extension.`);
+            
+            // Refresh agents list if sidebar is open
+            const sidebar = document.querySelector(".ai-agents-sidebar");
+            if (sidebar && !sidebar.classList.contains("ai-agents-hidden")) {
+                renderAgents();
+            }
+            
+            // Update button to show success
+            importButton.textContent = "✅ Đã thêm";
+            importButton.disabled = true;
+            setTimeout(() => {
+                importButton.textContent = "➕ Add Agent";
+                importButton.disabled = false;
+            }, 2000);
+        } catch (error) {
+            console.error("Import failed:", error);
+            alert(`❌ Import thất bại: ${error.message}`);
+        }
+    });
+    
+    buttonContainer.appendChild(importButton);
+    
+    // Insert button after code block
+    const parent = codeElement.parentElement;
+    if (parent) {
+        parent.insertBefore(buttonContainer, codeElement.nextSibling);
+    } else {
+        codeElement.insertAdjacentElement("afterend", buttonContainer);
+    }
+};
+
+// Monitor ChatGPT responses for JSON code blocks
+const setupJSONCodeBlockMonitor = () => {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    // Find code blocks with JSON - only check language-json class
+                    const codeBlocks = node.querySelectorAll?.("code.language-json");
+                    if (codeBlocks) {
+                        codeBlocks.forEach((codeBlock) => {
+                            addImportButtonToCodeBlock(codeBlock);
+                        });
+                    }
+                    
+                    // Check if the node itself is a JSON code block
+                    if (node.tagName === "CODE" && node.classList?.contains("language-json")) {
+                        addImportButtonToCodeBlock(node);
+                    }
+                }
+            });
+        });
+    });
+    
+    // Start observing
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // Also check existing code blocks - only JSON code blocks
+    setTimeout(() => {
+        const existingCodeBlocks = document.querySelectorAll("code.language-json");
+        existingCodeBlocks.forEach((codeBlock) => {
+            addImportButtonToCodeBlock(codeBlock);
+        });
+    }, 1000);
+};
+
 // Run the extension
 initExtension();
+
+// Setup JSON code block monitor after initialization
+setTimeout(() => {
+    setupJSONCodeBlockMonitor();
+}, 2000);
